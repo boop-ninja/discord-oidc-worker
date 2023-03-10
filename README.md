@@ -1,6 +1,6 @@
 # Discord OIDC Provider for Cloudflare Access
 
-Simply put: Allows you to authorise with Cloudflare Access using your Discord account via a Cloudflare Worker. Wraps OIDC around the Discord OAuth2 API to achieve this, storing signing keys in KV. 
+Simply put: Allows you to authorise with Cloudflare Access using your Discord account via a Cloudflare Worker. Wraps OIDC around the Discord OAuth2 API to achieve this, storing signing keys in KV.
 
 Process flow was inspired by [kimcore/discord-oidc](https://github.com/kimcore/discord-oidc) but rewritten entirely for [Cloudflare Workers](https://workers.cloudflare.com/) and [Hono](https://honojs.dev/).
 
@@ -11,12 +11,14 @@ Show them some love!
 ## Setup
 
 Requirements:
+
 - A Cloudflare Access account - make sure you've gone through the onboarding flow and have a `NAME.cloudflareaccess.com` subddomain.
 - A [Discord developer application](https://discord.com/developers/applications) to use for OAuth2.
-    - Add a redirect URI `https://YOURNAME.cloudflareaccess.com/cdn-cgi/access/callback` to the Discord application.
+  - Add a redirect URI `https://YOURNAME.cloudflareaccess.com/cdn-cgi/access/callback` to the Discord application.
 - NodeJS
 
 Steps:
+
 - Clone the repository.
 - Install dependencies: `npm install`
 - Create a KV namespace on Cloudflare [here](https://dash.cloudflare.com/?to=/:account/workers/kv/namespaces).
@@ -31,42 +33,43 @@ Steps:
 - Go to the [Cloudflare Zero Trust dashboard](https://one.dash.cloudflare.com)
 - Navigate to Settings > Authentication, select "Add new" under Login methods, select OpenID Connect.
 - Fill the following fields:
-    - Name: Whatever you want, e.g. `Discord`
-    - App ID: Your Discord application ID.
-    - Client secret: Your Discord application OAuth2 secret.
-    - Auth URL: `https://discord-oidc.YOURNAME.workers.dev/authorize/email` or swap out `/email` for `/guilds` to include the Guilds scope.
-    - Token URL:  `https://discord-oidc.YOURNAME.workers.dev/token`
-    - Certificate URL: `https://discord-oidc.YOURNAME.workers.dev/jwks.json`
-    - Proof Key for Code Exchange (PKCE): Enabled
-    - OIDC Claims:
-        - Email is included automatically without being set here.
-        - `preferred_username` will map to the users name + discrim e.g. `Erisa#9999`
-        - If the Auth URL is `/guilds` then the `guilds` claim can be used toprovide a list of guild IDs.
-        - Anything else from here will work: https://discord.com/developers/docs/resources/user#user-object-user-structure
+  - Name: Whatever you want, e.g. `Discord`
+  - App ID: Your Discord application ID.
+  - Client secret: Your Discord application OAuth2 secret.
+  - Auth URL: `https://discord-oidc.YOURNAME.workers.dev/authorize/email` or swap out `/email` for `/guilds` to include the Guilds scope.
+  - Token URL: `https://discord-oidc.YOURNAME.workers.dev/token`
+  - Certificate URL: `https://discord-oidc.YOURNAME.workers.dev/jwks.json`
+  - Proof Key for Code Exchange (PKCE): Enabled
+  - OIDC Claims:
+    - Email is included automatically without being set here.
+    - `preferred_username` will map to the users name + discrim e.g. `Erisa#9999`
+    - If the Auth URL is `/guilds` then the `guilds` claim can be used toprovide a list of guild IDs.
+    - Anything else from here will work: https://discord.com/developers/docs/resources/user#user-object-user-structure
 - See the Examples section below for help with constructing policies.
 
 ## Usage with roles
+
 - Follow the above setup, making sure to use the `/guilds` auth URL.
 - Create a Discord Bot for the OAuth2 application, generate an OAuth2 URL with the `bot` scope and use it to invite the bot to your server.
-    - The bot does not need any permissions, it just needs to exist in the server.
+  - The bot does not need any permissions, it just needs to exist in the server.
 - Generate a bot token and paste it into `npx wrangler secret put DISCORD_TOKEN`.
 - Populate `config.json` with a list of server IDs that you wish to check user roles for. **Make sure the bot is a member of all servers in this list**.
 - Edit the OIDC provider in Cloudflare Access and add the server IDs as claims prefixed with `roles:`, e.g. `roles:438781053675634713`
 - When creating a policy, reference the `roles:` claims as the name, and use the role ID as the claim value. This will match users in that server who have that role.
 
 Example config for a roles setup:
+
 ```json
 {
-    "clientId": "1056005449054429204",
-    "clientSecret": "aaaaaaaaaaaaa",
-    "redirectURL": "https://erisa.cloudflareaccess.com/cdn-cgi/access/callback",
-    "serversToCheckRolesFor": [
-        "438781053675634713"
-    ]
+  "clientId": "1056005449054429204",
+  "clientSecret": "aaaaaaaaaaaaa",
+  "redirectURL": "https://erisa.cloudflareaccess.com/cdn-cgi/access/callback",
+  "serversToCheckRolesFor": ["438781053675634713"]
 }
 ```
 
 ## Examples
+
 My setup, as an example:
 
 ![](https://up.erisa.uk/firefox_5978jWH1ti.png)
