@@ -1,4 +1,4 @@
-import * as config from "./config.json";
+import * as config from "./env";
 import { Hono } from "hono";
 import * as jose from "jose";
 
@@ -69,7 +69,7 @@ app.get("/authorize/:scopemode", async (c) => {
     redirect_uri: config.redirectURL,
     response_type: "code",
     scope:
-      c.req.param("scopemode") == "guilds"
+      c.req.param("scopemode") === "guilds"
         ? "identify email guilds"
         : "identify email",
     state: c.req.query("state"),
@@ -125,7 +125,7 @@ app.post("/token", async (c) => {
 
   let roleClaims = {};
 
-  if (c.env.DISCORD_TOKEN && "serversToCheckRolesFor" in config) {
+  if (config.token && "serversToCheckRolesFor" in config) {
     await Promise.all(
       config.serversToCheckRolesFor.map(async (guildId) => {
         if (servers.includes(guildId)) {
@@ -133,7 +133,7 @@ app.post("/token", async (c) => {
             `https://discord.com/api/guilds/${guildId}/members/${userInfo["id"]}`,
             {
               headers: {
-                Authorization: "Bot " + c.env.DISCORD_TOKEN,
+                Authorization: "Bot " + config.token,
               },
             }
           );
